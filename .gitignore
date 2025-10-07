@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# PDF files folder
+output/
+
 # C extensions
 *.so
 
