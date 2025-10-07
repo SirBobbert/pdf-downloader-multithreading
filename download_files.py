@@ -19,38 +19,53 @@ def download_file(data: pd.Series) -> tuple[bool, int]:
         for url in [data[config.PDF_URL_COLUMN], data[config.SECONDARY_PDF_URL_COLUMN]]
         if pd.notna(url)
     ]
-    status_code = 0
+    result_code = 0
+    url = None
 
     try:
         for url in urls:
             response = requests.get(
                 url, timeout=config.DOWNLOAD_TIMEOUT, headers=config.REQUEST_HEADERS
             )
-            status_code = response.status_code
 
-            if response.ok and verify_pdf(response.content):
-                save_path.write_bytes(response.content)
-                print(f"Successfully downloaded and wrote file: {data.name}")
-                return True, status_code
+            if response.status_code == 404:
+                print(f"File not found (404): {data.name} at {url}")
+                result_code = response.status_code
+                continue
 
-            else:
-                print(
-                    f"Error downloading file: {data.name}, status code: {response.status_code},  is PDF file: {verify_pdf(response.content)}"
-                )
+            if response.status_code == 403:
+                print(f"Access forbidden (403): {data.name} at {url}")
+                result_code = response.status_code
+                continue
+
+            if not response.ok:
+                print(f"HTTP error {response.status_code} for {data.name} at {url}")
+                result_code = response.status_code
+                continue
+
+            if not verify_pdf(response.content):
+                result_code = 415
+                print(f"Invalid PDF (415): {data.name} at {url}")
+                continue
+
+            save_path.write_bytes(response.content)
+            print(f"Successfully downloaded and wrote file: {data.name}")
+            result_code = response.status_code
+            return True, result_code
 
     except requests.Timeout:
-        status_code = 408
-        print(f"Timeout error for {data.name}")
+        result_code = 408
+        print(f"Timeout error (408): {data.name} at {url}")
 
     except requests.ConnectionError:
-        status_code = 503
-        print(f"Connection error for {data.name}")
+        result_code = 503
+        print(f"Connection error (503): {data.name} at {url}")
 
     except requests.RequestException as e:
-        status_code = 500
-        print(f"Error with file {data.name}: {e}")
+        result_code = 500
+        print(f"Error with file (500): {data.name}: {e}")
 
-    return False, status_code
+    return False, result_code
 
 
 def write_dict_to_json(status: dict) -> None:
@@ -83,7 +98,7 @@ def main() -> None:
     download_status = read_json_to_dict(config.STATUS_FILE)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
     start_time = time.perf_counter()
-    for index, row in unprocessed_df.iloc[23:28].iterrows():
+    for index, row in unprocessed_df.iloc[23:500].iterrows():
         download_state = download_file(row)
         download_status[index] = download_state
         write_dict_to_json(download_status)
