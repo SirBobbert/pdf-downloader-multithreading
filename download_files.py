@@ -97,14 +97,19 @@ def main() -> None:
 
     download_status = read_json_to_dict(config.STATUS_FILE)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
+
+    batch_size = 50    
+    batch = unprocessed_df.iloc[:batch_size]
+
+
     start_time = time.perf_counter()
-    for index, row in unprocessed_df.iloc[:50].iterrows():
+    for index, row in batch.iterrows():
         download_state = download_file(row)
         download_status[index] = download_state
         write_dict_to_json(download_status)
     end_time = time.perf_counter()
     print(
-        f"Downloaded {len(unprocessed_df.iloc[:50])} files in {end_time - start_time:.2f} seconds"
+        f"Downloaded {len(batch)} files in {end_time - start_time:.2f} seconds"
     )
 
 
