@@ -98,7 +98,7 @@ def main() -> None:
     download_status = read_json_to_dict(config.STATUS_FILE)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
     start_time = time.perf_counter()
-    for index, row in unprocessed_df.iloc[23:500].iterrows():
+    for index, row in unprocessed_df.iloc[:50].iterrows():
         download_state = download_file(row)
         download_status[index] = download_state
         write_dict_to_json(download_status)
