@@ -2328,5 +2328,255 @@
     false,
     503,
     "http://www.aptg.com.tw/corporate/download/CSR/2016_CSR.pdf"
+  ],
+  "BR50044": [
+    false,
+    500,
+    "file:///C:/Users/miller/Downloads/AA_AR2017.pdf"
+  ],
+  "BR50060": [
+    true,
+    200,
+    "https://www.abc-arbitrage.com/wp-content/uploads/2017/04/20170428-ABCA-VA-Annual-Financial-Report-2016-RFA.pdf"
+  ],
+  "BR50041": [
+    false,
+    503,
+    "http://arpeissig.at/wp-content/uploads/2016/02/D7_NHB_ARP_Final_2.pdf"
+  ],
+  "BR50049": [
+    false,
+    404,
+    "https://www.ag.ch/media/kanton_aargau/bvu/dokumente_2/umwelt__natur___landschaft/naturschutz_1/nachhaltigkeit_1/Bericht_Nachhaltigkeit_Def_klein.pdf"
+  ],
+  "BR50057": [
+    true,
+    200,
+    "http://dam.abbott.com/en-us/documents/pdfs/abbott-citizenship/2016_Sustainability_Report_LONG_FORM.pdf"
+  ],
+  "BR50048": [
+    false,
+    404,
+    "http://www.aalto.fi/en/about/reports_and_statistics/sustainability/raportit/"
+  ],
+  "BR50064": [
+    false,
+    503,
+    "https://www.standardlifeaberdeen.com/__data/assets/pdf_file/0015/19140/Corporate_Sustainability_Stewardship_Report_2017.pdf"
+  ],
+  "BR50056": [
+    false,
+    404,
+    "http://www.bseindia.com/bseplus/AnnualReport/500002/5000021216.pdf"
+  ],
+  "BR50058": [
+    true,
+    200,
+    "http://dam.abbott.com/en-ie/documents/pdf/2994%20Citizenship%20Report%202016%20v15.pdf"
+  ],
+  "BR50055": [
+    false,
+    408,
+    "https://cdn.cse.lk/cmt/upload_report_file/642_1502793422.pdf"
+  ],
+  "BR50043": [
+    false,
+    408,
+    "https://www.a2a.eu/en/sustainability/sustainability-reports "
+  ],
+  "BR50053": [
+    false,
+    408,
+    "http://globalsustain.org/files/ab-gr-ab_csr-2017_2nd.pdf"
+  ],
+  "BR50051": [
+    false,
+    408,
+    "http://www.eugesta.lt/assets/SOCIALINES-ATSAKOMYBES-ATASKAITA-2016.pdf"
+  ],
+  "BR50063": [
+    true,
+    200,
+    "http://www.abengoa.com/export/sites/abengoa_corp/resources/pdf/en/gobierno_corporativo/informes_anuales/2016/Tomo1/2016_Volume1_AR.pdf"
+  ],
+  "BR50068": [
+    false,
+    408,
+    "https://www.abnamro.com/en/images/Documents/Investor_Relations/Financial_Disclosures/2016/ABN_AMRO_Group_Annual_Report_2016.pdf"
+  ],
+  "BR50050": [
+    false,
+    415,
+    "https://www.akb.ch/die-akb/kommunikation-medien/geschaeftsberichte"
+  ],
+  "BR50042": [
+    true,
+    200,
+    "http://cdn12.a1.net/m/resources/media/pdf/A1-Umwelterkl-rung-2016-2017.pdf"
+  ],
+  "BR50065": [
+    false,
+    404,
+    "https://www.abertis.com/informeanual2016/en/#//"
+  ],
+  "BR50547": [
+    false,
+    408,
+    "https://cdn.cse.lk/cmt/upload_report_file/1205_1500605801.pdf"
+  ],
+  "BR50069": [
+    false,
+    408,
+    "https://s3-ap-southeast-1.amazonaws.com/aboitizsite-mediafiles/wp-content/uploads/2018/10/12123742/AEV-AR2016_Spread1.pdf"
+  ],
+  "BR50066": [
+    false,
+    408,
+    "https://www.awm-muenchen.de/ueber-uns/hier-finden-sie-uns/kontakt.html"
+  ],
+  "BR50551": [
+    false,
+    408,
+    "https://cdn.cse.lk/cmt/upload_report_file/512_1503485556439.pdf"
+  ],
+  "BR50558": [
+    false,
+    503,
+    "https://verslag.asnbank.nl/2016/FbContent.ashx/pub_1000/Downloads/ASN_Bank_Report_2016.pdf"
+  ],
+  "BR50552": [
+    false,
+    503,
+    "https://www.grupobolivar.com.co/wps/wcm/connect/a5e0c384-9240-4253-9255-569ced23af09/2016-grupo-bolivar.pdf?MOD=AJPERES&CVID=mh8yc04"
+  ],
+  "BR50546": [
+    false,
+    503,
+    "http://www.asiapulppaper.com/system/files/app_sustainability_report_2016_web.pdf"
+  ],
+  "BR50047": [
+    true,
+    200,
+    "http://ebooks.exakta.se/aak/2017/hallbarhetsrapport_2016_2017_en/pubData/source/aak_sustainability_report_2016_2017_ebook.pdf"
+  ],
+  "BR50549": [
+    false,
+    408,
+    "https://www.adb.org/sites/default/files/institutional-document/411996/adb-annual-report-2017.pdf"
+  ],
+  "BR50045": [
+    true,
+    200,
+    "http://www.hkexnews.hk/listedco/listconews/SEHK/2017/0512/LTN20170512165.pdf"
+  ],
+  "BR50548": [
+    false,
+    408,
+    "http://www.avc.co/Portals/0/zh-tw/FileUpload/%E4%BC%81%E6%A5%AD%E8%B2%AC%E4%BB%BB/2016%E7%A4%BE%E6%9C%83%E8%B2%AC%E4%BB%BB%E5%A0%B1%E5%91%8A.pdf"
+  ],
+  "BR50061": [
+    false,
+    404,
+    "http://www.abdiibrahim.com.tr/docs/default-source/default-document-library/k%C3%BCresel-i-lkeler-s%C3%B6zle%C5%9Fmeleri/ai_kis_raporu_2016.pdf?sfvrsn=0"
+  ],
+  "BR50059": [
+    true,
+    200,
+    "http://www.abc.net.au/corp/annual-report/2017/documents/ABC_AnnualREport-2017_Volume-1.pdf"
+  ],
+  "BR50557": [
+    false,
+    503,
+    "https://staticwww.asml.com/doclib/investor/annual_reports/2016/DownloadCenter/reports/Integrated%20Report%202016%20FINAL%2008.02.2017.pdf"
+  ],
+  "BR50554": [
+    false,
+    503,
+    "http://www.askey.com.tw/pdf/2016final_CSR_English_low.pdf"
+  ],
+  "BR50545": [
+    false,
+    408,
+    "http://www.apc.com.tw/OthersPDF/APC_2016_CSR_Report.pdf"
+  ],
+  "BR50550": [
+    false,
+    408,
+    "http://sustainability.asianpaints.com/pdf/2016-17/APL%20Sustainability%20Report%20FY16-17.pdf"
+  ],
+  "BR50052": [
+    true,
+    200,
+    "http://www.ab-science.com/file_bdd/content/1480493978_DDRVF.pdf"
+  ],
+  "BR50560": [
+    false,
+    408,
+    "http://www.achs.cl/portal/ACHS-Corporativo/Documentos%20Nuestros%20Logros/Memoria_ACHS_2016.pdf"
+  ],
+  "BR50559": [
+    false,
+    408,
+    "http://www.asobancaria.com/2017/07/05/2016-informe-de-sostenibilidad/"
+  ],
+  "BR50562": [
+    false,
+    408,
+    "http://www.aspapel.es/sites/default/files/adjuntos/doc_490_ms2017_2.pdf"
+  ],
+  "BR50567": [
+    false,
+    415,
+    "http://www.assmann.de/unternehmen/"
+  ],
+  "BR50566": [
+    false,
+    408,
+    "http://www.assaabloy.com/Global/Sustainability/Sustainability-Report/2016/Sustainability%20report%202016.pdf"
+  ],
+  "BR50564": [
+    false,
+    408,
+    "https://www.aspensnowmass.com/-/media/aspensnowmass/pdfs/environmental/sustainability-reports/2017_asc_sustainability_report.ashx"
+  ],
+  "BR50553": [
+    false,
+    503,
+    "http://www.aska-pharma.co.jp/csr/img/aska_report17_all.pdf"
+  ],
+  "BR50563": [
+    false,
+    503,
+    "http://www.aspenpharma.com/wp-content/uploads/2017/11/Aspen-2017-Integrated-Report-LR.pdf"
+  ],
+  "BR50054": [
+    true,
+    200,
+    "https://www.abancacorporacionbancaria.com/files/documents/memoria-anual-rsc-2016-es.pdf"
+  ],
+  "BR50062": [
+    false,
+    404,
+    "https://www.unglobalcompact.org/system/attachments/cop_2018/451251/original/AI_Global_Compact_Report.pdf?1515157155"
+  ],
+  "BR50556": [
+    true,
+    200,
+    "http://www.hkexnews.hk/listedco/listconews/SEHK/2017/0529/LTN20170529530.pdf"
+  ],
+  "BR50565": [
+    true,
+    200,
+    "https://s3-eu-west-1.amazonaws.com/despar/webroot/pdf/integrated_report_eng_2016.pdf"
+  ],
+  "BR50561": [
+    true,
+    200,
+    "http://www.aedcr.com/sites/default/files/docs/aed-memoria-2016-liviano.pdf"
+  ],
+  "BR50067": [
+    true,
+    200,
+    "http://www.ablerex.com.tw/ch/CSR/CSR20170911.pdf"
   ]
 }
