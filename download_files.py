@@ -109,7 +109,7 @@ def main() -> None:
         write_dict_to_json(download_status)
     end_time = time.perf_counter()
     print(
-        f"Downloaded {len(batch)} files in {end_time - start_time:.2f} seconds"
+        f"Downloaded {batch_size} files in {end_time - start_time:.2f} seconds"
     )
 
 
