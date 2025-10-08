@@ -104,7 +104,7 @@ def main() -> None:
         write_dict_to_json(download_status)
     end_time = time.perf_counter()
     print(
-        f"Downloaded {len(unprocessed_df.iloc[:5])} files in {end_time - start_time:.2f} seconds"
+        f"Downloaded {len(unprocessed_df.iloc[:50])} files in {end_time - start_time:.2f} seconds"
     )
 
 
