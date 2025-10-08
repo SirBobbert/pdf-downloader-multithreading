@@ -11,7 +11,7 @@ def verify_pdf(content: bytes) -> bool:
     return content.startswith(PDF_MAGIC_BYTES)
 
 
-def download_file(data: pd.Series) -> tuple[bool, int]:
+def download_file(data: pd.Series) -> tuple[bool, int, str]:
     save_path = config.DOWNLOADS_DIR / f"{data.name}.pdf"
     # Converts to valid entries to strings
     urls = [
@@ -20,7 +20,7 @@ def download_file(data: pd.Series) -> tuple[bool, int]:
         if pd.notna(url)
     ]
     result_code = 0
-    url = None
+    url = ""
 
     try:
         for url in urls:
@@ -51,7 +51,7 @@ def download_file(data: pd.Series) -> tuple[bool, int]:
             save_path.write_bytes(response.content)
             print(f"Successfully downloaded and wrote file: {data.name}")
             result_code = response.status_code
-            return True, result_code
+            return True, result_code, url
 
     except requests.Timeout:
         result_code = 408
@@ -65,7 +65,7 @@ def download_file(data: pd.Series) -> tuple[bool, int]:
         result_code = 500
         print(f"Error with file (500): {data.name}: {e}")
 
-    return False, result_code
+    return False, result_code, url
 
 
 def write_dict_to_json(status: dict) -> None:
