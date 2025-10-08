@@ -100,26 +100,25 @@ def main() -> None:
     download_status = read_json_to_dict(config.STATUS_FILE)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
     
+    batch_size = 50
+    batch = unprocessed_df.iloc[:batch_size]
+
     start_time = time.perf_counter()
 
     status_lock = threading.Lock()
 
     with ThreadPoolExecutor() as executor:
-        future_to_id = {executor.submit(download_file, row): idx for idx, row in unprocessed_df[:50].iterrows()}
+        future_to_id = {executor.submit(download_file, row): idx for idx, row in batch.iterrows()}
 
         for future in as_completed(future_to_id):
             index = future_to_id[future]
             with status_lock:
                 download_status[index] = future.result()
                 write_dict_to_json(download_status)
-
-    #for index, row in unprocessed_df.iloc[23:500].iterrows():
-    #    download_state = download_file(row)
-    #    download_status[index] = download_state
-    #    write_dict_to_json(download_status)
+                
     end_time = time.perf_counter()
     print(
-        f"Downloaded {len(unprocessed_df.iloc[:5])} files in {end_time - start_time:.2f} seconds"
+        f"Downloaded {batch_size} files in {end_time - start_time:.2f} seconds"
     )
 
 
