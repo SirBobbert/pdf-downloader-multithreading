@@ -187,7 +187,7 @@ def main_concurrent(
 
     download_status = read_json_to_dict(data_config.log_file)
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=32) as executor:
         futures = {
             executor.submit(download_pdf_file, idx, url, download_config): idx
             for idx, url in urls.items()
@@ -234,5 +234,5 @@ def main_sequential(
 
 
 if __name__ == "__main__":
-    download_config = config.replace(download_config, batch_size = 10)
-    main_sequential(data_config, download_config)
+    download_config = config.replace(download_config, batch_size = 200)
+    main_concurrent(data_config, download_config)
