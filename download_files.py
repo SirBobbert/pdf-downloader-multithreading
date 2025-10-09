@@ -24,7 +24,6 @@ download_config = config.DownloadConfig(
     batch_size=config.BATCH_SIZE,
     request_headers=config.REQUEST_HEADERS,
     workers=config.WORKERS,
-    
 )
 
 
@@ -205,9 +204,10 @@ def main_concurrent(
     )
     return end_time - start_time, download_status
 
+
 def main_sequential(
     data_config: config.DataConfig, download_config: config.DownloadConfig
-) -> None:
+) -> tuple[float, dict]:
     start_time = time.perf_counter()
     df = pd.read_excel(
         data_config.data_file,
@@ -216,7 +216,7 @@ def main_sequential(
     )
     batch = filter_data(df, data_config, batch_size=download_config.batch_size)
 
-    download_status = read_json_to_dict(data_config.log_file)
+    download_status = {}
 
     urls = batch[
         [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
@@ -225,27 +225,26 @@ def main_sequential(
     for index, url in urls.items():
         download_state = download_pdf_file(index, url, download_config)
         download_status[index] = download_state
-        write_dict_to_json(download_status)
+    write_dict_to_json(download_status)
 
     end_time = time.perf_counter()
     print(
         f"Attempted to Download {len(urls)} files in {end_time - start_time:.2f} seconds"
     )
+    return end_time - start_time, download_status
 
 
 if __name__ == "__main__":
-    download_config = config.replace(download_config, batch_size = 20, workers=32)
-    
+    download_config = config.replace(download_config, batch_size=500, workers=32)
 
     benchmarks = {}
-    for run in range(2): 
-        elapsed_time, download_status = main_concurrent(data_config, download_config)
+    for run in range(1):
+        elapsed_time, download_status = main_sequential(data_config, download_config)
         benchmarks[run] = {
             "elapsed_time": elapsed_time,
             "batch_size": download_config.batch_size,
             "workers": download_config.workers,
-            "download_status": download_status
+            "download_status": download_status,
         }
-    with open("benchmarks/benchmarks_pandas_vectorization.json", "a") as f:
+    with open("benchmarks/benchmarks_sequential.json", "a") as f:
         json.dump(benchmarks, f, indent=2)
-
