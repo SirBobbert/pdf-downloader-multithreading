@@ -6,7 +6,8 @@ import config
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
-from collections.abc import Callable
+from _collections_abc import Hashable
+
 
 data_config = config.DataConfig(
     data_file=config.DATA_FILE,
@@ -20,18 +21,15 @@ data_config = config.DataConfig(
 download_config = config.DownloadConfig(
     downloads_dir=config.DOWNLOADS_DIR,
     download_timeout=config.DOWNLOAD_TIMEOUT,
+    batch_size=config.BATCH_SIZE,
     request_headers=config.REQUEST_HEADERS,
+    
 )
 
 
 def verify_pdf(content: bytes) -> bool:
     PDF_MAGIC_BYTES = b"%PDF-"
     return content.startswith(PDF_MAGIC_BYTES)
-
-
-# Apply across rows to create a Series of URL lists
-def extract_all_urls(func: Callable, df: pd.DataFrame) -> pd.Series:
-    return df[[config.PDF_URL_COLUMN, config.SECONDARY_PDF_URL_COLUMN]].apply(func, axis=1)
 
 
 def extract_urls_from_row(row: pd.Series, config: config.DataConfig) -> list[str]:
@@ -48,7 +46,10 @@ def extract_urls_from_row(row: pd.Series, config: config.DataConfig) -> list[str
     urls = [str(row[col]) for col in columns]
     return urls
 
-def extract_urls_from_df(df: pd.DataFrame, config: config.DataConfig) -> dict[str, list[str]]:
+
+def extract_urls_from_df(
+    df: pd.DataFrame, config: config.DataConfig
+) -> dict[str, list[str]]:
     """Extracts URLs from the specified columns in the dataframe.
 
     Args:
@@ -65,23 +66,11 @@ def extract_urls_from_df(df: pd.DataFrame, config: config.DataConfig) -> dict[st
             url_dict[index] = urls
     return url_dict
 
-def extract_urls_from_df_to_dict(df: pd.DataFrame, cfg: config.DataConfig) -> dict[str, list[str]]:
-    """Extract URLs from DataFrame, returning dict mapping row IDs to URL lists."""
-    columns = [cfg.pdf_url_column, cfg.secondary_pdf_url_column]
-    url_dict = {}
-    
-    for row_id, row in df.iterrows():
-        urls = [str(row[col]) for col in columns]
-        if urls:
-            url_dict[row_id] = urls
-    
-    return url_dict
 
 def download_pdf_file(
-    row_id: str, urls: list[str], config: config.DownloadConfig
+    row_id: Hashable, urls: list[str], config: config.DownloadConfig
 ) -> tuple[bool, int, str]:
     save_path = config.downloads_dir / f"{row_id}.pdf"
-    # Converts to valid entries to strings
 
     result_code = 0
     url = ""
@@ -178,16 +167,22 @@ def filter_data(
     return unprocessed_df.iloc[:batch_size]
 
 
-def main_concurrent(data_config: config.DataConfig, download_config: config.DownloadConfig) -> None:
+def main_concurrent(
+    data_config: config.DataConfig, download_config: config.DownloadConfig
+) -> None:
     """_summary_"""
 
     start_time = time.perf_counter()
-    df = pd.read_excel(data_config.data_file, sheet_name=0, index_col=data_config.id_column)
-    batch = filter_data(df, data_config, batch_size=50)
-    urls = batch[[data_config.pdf_url_column, data_config.secondary_pdf_url_column]].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
-    
+    df = pd.read_excel(
+        data_config.data_file,
+        sheet_name=data_config.sheet_name,
+        index_col=data_config.id_column,
+    )
+    batch = filter_data(df, data_config, batch_size=download_config.batch_size)
+    urls = batch[
+        [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
+    ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
 
-    
     status_lock = threading.Lock()
 
     download_status = read_json_to_dict(data_config.log_file)
@@ -205,32 +200,39 @@ def main_concurrent(data_config: config.DataConfig, download_config: config.Down
                 write_dict_to_json(download_status)
 
     end_time = time.perf_counter()
-    print(f"Attempted to Downloaded {len(urls)} files in {end_time - start_time:.2f} seconds")
-
-def main() -> None:
-    df = pd.read_excel(config.DATA_FILE, sheet_name=0, index_col=config.ID_COLUMN)
-
-    ### filter out rows with no URL
-    has_url = (
-        df[config.PDF_URL_COLUMN].notna() | df[config.SECONDARY_PDF_URL_COLUMN].notna()
+    print(
+        f"Attempted to Download {len(urls)} files in {end_time - start_time:.2f} seconds"
     )
-    df = df[has_url]
 
-    download_status = read_json_to_dict(config.LOG_FILE)
-    unprocessed_df = df[~df.index.isin(download_status.keys())]
 
-    batch_size = 50
-    batch = unprocessed_df.iloc[:batch_size]
-
+def main_sequential(
+    data_config: config.DataConfig, download_config: config.DownloadConfig
+) -> None:
     start_time = time.perf_counter()
-    for index, row in batch.iterrows():
-        download_state = download_pdf_file(row)
+    df = pd.read_excel(
+        data_config.data_file,
+        sheet_name=data_config.sheet_name,
+        index_col=data_config.id_column,
+    )
+    batch = filter_data(df, data_config, batch_size=download_config.batch_size)
+
+    download_status = read_json_to_dict(data_config.log_file)
+
+    urls = batch[
+        [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
+    ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
+
+    for index, url in urls.items():
+        download_state = download_pdf_file(index, url, download_config)
         download_status[index] = download_state
         write_dict_to_json(download_status)
 
     end_time = time.perf_counter()
-    print(f"Downloaded {batch_size} files in {end_time - start_time:.2f} seconds")
+    print(
+        f"Attempted to Download {len(urls)} files in {end_time - start_time:.2f} seconds"
+    )
 
 
 if __name__ == "__main__":
-    main_concurrent(data_config, download_config)
+    download_config = config.replace(download_config, batch_size = 10)
+    main_sequential(data_config, download_config)
