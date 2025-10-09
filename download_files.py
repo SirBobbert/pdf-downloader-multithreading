@@ -28,6 +28,14 @@ download_config = config.DownloadConfig(
 
 
 def verify_pdf(content: bytes) -> bool:
+    """Verifies if the content is a valid PDF by checking first bytes.
+
+    Args:
+        content: bytes from the HTTP response.
+
+    Returns:
+        bool: True if content is a valid PDF, False otherwise.
+    """
     PDF_MAGIC_BYTES = b"%PDF-"
     return content.startswith(PDF_MAGIC_BYTES)
 
@@ -70,6 +78,23 @@ def extract_urls_from_df(
 def download_pdf_file(
     row_id: Hashable, urls: list[str], config: config.DownloadConfig
 ) -> tuple[bool, int, str]:
+    """Downloads a PDF file from the given URLs and saves it to the specified directory.
+
+    Args:
+        row_id: The identifier for the row, used to name the saved file.
+        urls: A list of URLs to attempt to download the PDF from.
+        config: DownloadConfig specifying download settings and directory.
+
+    Returns:
+        tuple: A tuple containing a boolean indicating success,
+               the HTTP status code, and the URL used.
+
+    Raises:
+        requests.Timeout: If there is a timeout during the request.
+        requests.ConnectionError: If there is a connection error during the request.
+        requests.RequestException: For other request-related errors.
+
+    """
     save_path = config.downloads_dir / f"{row_id}.pdf"
 
     result_code = 0
@@ -132,6 +157,14 @@ def write_dict_to_json(status: dict) -> None:
 
 
 def read_json_to_dict(filepath: Path) -> dict:
+    """Small helper function that returns an empty dictionary if the log files doesn't exist.
+
+    Args:
+        filepath (Path): The path to the json file.
+
+    Returns:
+        dict: The content of the json file as a dictionary or an empty dictionary if the file doesn't exist.
+    """
     if not filepath.exists():
         return {}
     with open(filepath, "r") as file:
@@ -157,10 +190,11 @@ def filter_data(
     )
     df = df[has_url]
 
-    # Reads already processed IDs from log file and filters them out
+    # Reads already processed IDs from the log file and filters them out
     download_status = read_json_to_dict(config.log_file)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
 
+    # "Hack" to return the entire dataframe at call time if batch_size is None
     if batch_size is None:
         return unprocessed_df
 
@@ -170,7 +204,15 @@ def filter_data(
 def main_concurrent(
     data_config: config.DataConfig, download_config: config.DownloadConfig
 ) -> tuple[float, dict]:
-    """_summary_"""
+    """Main function to download PDF files concurrently using ThreadPoolExecutor.
+
+    Args:
+        data_config: DataConfig containing data file and column info.
+        download_config: DownloadConfig containing download settings.
+
+    Returns:
+        tuple: A tuple containing the elapsed time and a dictionary with download statuses for benchmarking purposes.
+    """
 
     start_time = time.perf_counter()
     df = pd.read_excel(
@@ -179,14 +221,13 @@ def main_concurrent(
         index_col=data_config.id_column,
     )
     batch = filter_data(df, data_config, batch_size=download_config.batch_size)
+
+    # Get URLs from both columns and combine them into a list which is stored in a data series for vectorized access with pandas
     urls = batch[
         [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
     ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
 
-    status_lock = threading.Lock()
-
     download_status = {}
-
     with ThreadPoolExecutor(max_workers=download_config.workers) as executor:
         futures = {
             executor.submit(download_pdf_file, idx, url, download_config): idx
@@ -208,6 +249,15 @@ def main_concurrent(
 def main_sequential(
     data_config: config.DataConfig, download_config: config.DownloadConfig
 ) -> tuple[float, dict]:
+    """Main function to download PDF files concurrently using ThreadPoolExecutor.
+
+    Args:
+        data_config: DataConfig containing data file and column info.
+        download_config: DownloadConfig containing download settings.
+
+    Returns:
+        tuple: A tuple containing the elapsed time and a dictionary with download statuses for benchmarking purposes.
+    """
     start_time = time.perf_counter()
     df = pd.read_excel(
         data_config.data_file,
@@ -216,12 +266,12 @@ def main_sequential(
     )
     batch = filter_data(df, data_config, batch_size=download_config.batch_size)
 
-    download_status = {}
-
+    # Get URLs from both columns and combine them into a list which is stored in a data series for vectorized access with pandas
     urls = batch[
         [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
     ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
 
+    download_status = {}
     for index, url in urls.items():
         download_state = download_pdf_file(index, url, download_config)
         download_status[index] = download_state
@@ -233,9 +283,25 @@ def main_sequential(
     )
     return end_time - start_time, download_status
 
+def benchmark(func: callable, *args : any) -> tuple[float, any]:
+    """Utility function to benchmark a given function.
+
+    Args:
+        func: The function to benchmark.
+        *args: Positional arguments to pass to the function.
+
+    Returns:
+        tuple: A tuple containing the elapsed time and the result of the function call.
+    """
+    start_time = time.perf_counter()
+    result = func(*args)
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    return elapsed_time, result
+
 
 if __name__ == "__main__":
-    download_config = config.replace(download_config, batch_size=500, workers=32)
+    download_config = config.replace(download_config, batch_size=5, workers=32)
 
     benchmarks = {}
     for run in range(1):
@@ -246,5 +312,5 @@ if __name__ == "__main__":
             "workers": download_config.workers,
             "download_status": download_status,
         }
-    with open("benchmarks/benchmarks_sequential.json", "a") as f:
-        json.dump(benchmarks, f, indent=2)
+    #with open("benchmarks/benchmarks_sequential.json", "a") as f:
+        #json.dump(benchmarks, f, indent=2)
