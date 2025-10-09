@@ -23,6 +23,7 @@ download_config = config.DownloadConfig(
     download_timeout=config.DOWNLOAD_TIMEOUT,
     batch_size=config.BATCH_SIZE,
     request_headers=config.REQUEST_HEADERS,
+    workers=config.WORKERS,
     
 )
 
@@ -169,7 +170,7 @@ def filter_data(
 
 def main_concurrent(
     data_config: config.DataConfig, download_config: config.DownloadConfig
-) -> None:
+) -> tuple[float, dict]:
     """_summary_"""
 
     start_time = time.perf_counter()
@@ -185,9 +186,9 @@ def main_concurrent(
 
     status_lock = threading.Lock()
 
-    download_status = read_json_to_dict(data_config.log_file)
+    download_status = {}
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
+    with ThreadPoolExecutor(max_workers=download_config.workers) as executor:
         futures = {
             executor.submit(download_pdf_file, idx, url, download_config): idx
             for idx, url in urls.items()
@@ -195,15 +196,14 @@ def main_concurrent(
 
         for future in as_completed(futures):
             index = futures[future]
-            with status_lock:
-                download_status[index] = future.result()
-                write_dict_to_json(download_status)
+            download_status[index] = future.result()
+    write_dict_to_json(download_status)
 
     end_time = time.perf_counter()
     print(
         f"Attempted to Download {len(urls)} files in {end_time - start_time:.2f} seconds"
     )
-
+    return end_time - start_time, download_status
 
 def main_sequential(
     data_config: config.DataConfig, download_config: config.DownloadConfig
@@ -234,5 +234,18 @@ def main_sequential(
 
 
 if __name__ == "__main__":
-    download_config = config.replace(download_config, batch_size = 200)
-    main_concurrent(data_config, download_config)
+    download_config = config.replace(download_config, batch_size = 20, workers=32)
+    
+
+    benchmarks = {}
+    for run in range(2): 
+        elapsed_time, download_status = main_concurrent(data_config, download_config)
+        benchmarks[run] = {
+            "elapsed_time": elapsed_time,
+            "batch_size": download_config.batch_size,
+            "workers": download_config.workers,
+            "download_status": download_status
+        }
+    with open("benchmarks/benchmarks_pandas_vectorization.json", "a") as f:
+        json.dump(benchmarks, f, indent=2)
+
