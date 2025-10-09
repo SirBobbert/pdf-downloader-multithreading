@@ -3,7 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-# PDF files folder
+# Project folders
 downloads/
 logs/
 
