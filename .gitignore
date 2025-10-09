@@ -4,7 +4,8 @@ __pycache__/
 *$py.class
 
 # PDF files folder
-output/
+downloads/
+logs/
 
 # C extensions
 *.so
