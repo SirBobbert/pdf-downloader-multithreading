@@ -74,7 +74,7 @@ def write_dict_to_json(status: dict) -> None:
     Args:
         status (dict): The dictionary containing the status of downloads
     """
-    with open(config.STATUS_FILE, "w") as file:
+    with open(config.LOG_FILE, "w") as file:
         json.dump(status, file, indent=2)
 
 
@@ -95,7 +95,7 @@ def main() -> None:
     )
     df = df[has_url]
 
-    download_status = read_json_to_dict(config.STATUS_FILE)
+    download_status = read_json_to_dict(config.LOG_FILE)
     unprocessed_df = df[~df.index.isin(download_status.keys())]
 
     batch_size = 50    
