@@ -301,16 +301,22 @@ def benchmark(func: callable, *args: any) -> tuple[float, any]:
 
 
 if __name__ == "__main__":
-    download_config = config.replace(download_config, batch_size=5, workers=32)
+    worker_counts = [2, 4, 8, 16, 24, 28, 32, 50, 75]
+    batch_sizes = [10, 50, 100, 200, 300]
 
+    run = 0
     benchmarks = {}
-    for run in range(1):
-        elapsed_time, download_status = main_sequential(data_config, download_config)
-        benchmarks[run] = {
+    for worker_count in worker_counts:
+        for batch_size in batch_sizes:
+            run += 1
+            download_config = config.replace(download_config, batch_size=batch_size, workers=worker_count)
+            elapsed_time, download_status = main_concurrent(data_config, download_config)
+            benchmarks[run] = {
             "elapsed_time": elapsed_time,
             "batch_size": download_config.batch_size,
             "workers": download_config.workers,
             "download_status": download_status,
         }
-    # with open("benchmarks/benchmarks_sequential.json", "a") as f:
-    # json.dump(benchmarks, f, indent=2)
+        
+    with open("benchmarks/benchmarks_vectorization_varying_params.json", "a") as f:
+        json.dump(benchmarks, f, indent=2)
