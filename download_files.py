@@ -5,7 +5,6 @@ import json
 import config
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 from _collections_abc import Hashable
 
 
@@ -283,7 +282,8 @@ def main_sequential(
     )
     return end_time - start_time, download_status
 
-def benchmark(func: callable, *args : any) -> tuple[float, any]:
+
+def benchmark(func: callable, *args: any) -> tuple[float, any]:
     """Utility function to benchmark a given function.
 
     Args:
@@ -312,5 +312,5 @@ if __name__ == "__main__":
             "workers": download_config.workers,
             "download_status": download_status,
         }
-    #with open("benchmarks/benchmarks_sequential.json", "a") as f:
-        #json.dump(benchmarks, f, indent=2)
+    # with open("benchmarks/benchmarks_sequential.json", "a") as f:
+    # json.dump(benchmarks, f, indent=2)
