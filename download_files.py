@@ -4,6 +4,8 @@ import requests
 import json
 import config
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 
 def verify_pdf(content: bytes) -> bool:
@@ -85,6 +87,51 @@ def read_json_to_dict(filepath: Path) -> dict:
         status = json.load(file)
     return status
 
+def filter_data(df: pd.DataFrame, log: Path, batch_size) -> pd.DataFrame:
+    """_summary_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    ### filter out rows with no URL
+
+    config.PDF_URL_COLUMN = "test"
+
+    has_url = (
+        df[config.PDF_URL_COLUMN].notna() | df[config.SECONDARY_PDF_URL_COLUMN].notna()
+    )
+    df = df[has_url]
+
+    download_status = read_json_to_dict(config.LOG_FILE)
+    unprocessed_df = df[~df.index.isin(download_status.keys())]
+   
+    batch = unprocessed_df.iloc[:batch_size]
+    return batch
+
+def main_concurrent() -> None:
+    """_summary_
+    """
+    df = pd.read_excel(config.DATA_FILE, sheet_name=0, index_col=config.ID_COLUMN)
+    batch = filter_data(df, config.LOG_FILE, batch_size = 50)
+
+    start_time = time.perf_counter()
+
+    status_lock = threading.Lock()
+
+    download_status = read_json_to_dict(config.LOG_FILE)
+
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        future_to_id = {executor.submit(download_file, row): idx for idx, row in batch.iterrows()}
+
+        for future in as_completed(future_to_id):
+            index = future_to_id[future]
+            #with status_lock:
+            download_status[index] = future.result()
+            write_dict_to_json(download_status)
+                
+    end_time = time.perf_counter()
+
+
 
 def main() -> None:
     df = pd.read_excel(config.DATA_FILE, sheet_name=0, index_col=config.ID_COLUMN)
@@ -107,6 +154,7 @@ def main() -> None:
         download_state = download_file(row)
         download_status[index] = download_state
         write_dict_to_json(download_status)
+    
     end_time = time.perf_counter()
     print(
         f"Downloaded {batch_size} files in {end_time - start_time:.2f} seconds"
