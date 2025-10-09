@@ -11,7 +11,7 @@ DOWNLOADS_DIR.mkdir(exist_ok=True)
 
 # Input data file
 DATA_FILE = DATA_DIR / "GRI_2017_2020.xlsx"
-STATUS_FILE = LOGS_DIR / "status.json"
+LOG_FILE = LOGS_DIR / "log.json"
 
 # Dataframe columns
 ID_COLUMN = "BRnum"
@@ -21,5 +21,5 @@ SECONDARY_PDF_URL_COLUMN = "Report Html Address"
 # Download settings
 DOWNLOAD_TIMEOUT = 0.5  # seconds
 REQUEST_HEADERS = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-}
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" # To mimic a real browser and not a web scraper
+} 
