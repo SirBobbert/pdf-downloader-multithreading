@@ -24,7 +24,7 @@ SECONDARY_PDF_URL_COLUMN = "Report Html Address"
 
 # Download settings
 DOWNLOAD_TIMEOUT = 0.5  # seconds
-BATCH_SIZE = 500
+BATCH_SIZE = 20
 WORKERS = 32
 REQUEST_HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" # To mimic a real browser and not a web scraper

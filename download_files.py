@@ -39,41 +39,6 @@ def verify_pdf(content: bytes) -> bool:
     return content.startswith(PDF_MAGIC_BYTES)
 
 
-def extract_urls_from_row(row: pd.Series, config: config.DataConfig) -> list[str]:
-    """Returns the valid URLs from the columns specified in the config.
-
-    Args:
-        row : A pandas Series containing the data for a single row.
-        config: DataConfig specifying which columns contain URLs.
-
-    Returns:
-        list[str]: A list of URLs found in the series.
-    """
-    columns = [config.pdf_url_column, config.secondary_pdf_url_column]
-    urls = [str(row[col]) for col in columns]
-    return urls
-
-
-def extract_urls_from_df(
-    df: pd.DataFrame, config: config.DataConfig
-) -> dict[str, list[str]]:
-    """Extracts URLs from the specified columns in the dataframe.
-
-    Args:
-        df: The dataframe containing the data.
-        config: DataConfig specifying which columns contain URLs.
-
-    Returns:
-        dict[str, list[str]]: A dictionary mapping row IDs to lists of URLs.
-    """
-    url_dict = {}
-    for index, row in df.iterrows():
-        urls = extract_urls_from_row(row, config)
-        if urls:
-            url_dict[index] = urls
-    return url_dict
-
-
 def download_pdf_file(
     row_id: Hashable, urls: list[str], config: config.DownloadConfig
 ) -> tuple[bool, int, str]:
@@ -303,7 +268,8 @@ def benchmark(func: callable, *args: any) -> tuple[float, any]:
 if __name__ == "__main__":
     worker_counts = [2, 4, 8, 16, 24, 28, 32, 50, 75]
     batch_sizes = [10, 50, 100, 200, 300]
-
+    main_concurrent(data_config, download_config)
+"""
     run = 0
     benchmarks = {}
     for worker_count in worker_counts:
@@ -317,6 +283,6 @@ if __name__ == "__main__":
             "workers": download_config.workers,
             "download_status": download_status,
         }
-        
-    with open("benchmarks/benchmarks_vectorization_varying_params.json", "a") as f:
-        json.dump(benchmarks, f, indent=2)
+"""       
+    #with open("benchmarks/benchmarks_vectorization_varying_params.json", "a") as f:
+    #    json.dump(benchmarks, f, indent=2)
