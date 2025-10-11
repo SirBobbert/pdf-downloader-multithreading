@@ -39,9 +39,7 @@ def verify_pdf(content: bytes) -> bool:
     return content.startswith(PDF_MAGIC_BYTES)
 
 
-def download_pdf_file(
-    row_id: Hashable, urls: list[str], config: config.DownloadConfig
-) -> tuple[bool, int, str]:
+def download_pdf_file(row_id: Hashable | str, urls: list[str], config: config.DownloadConfig) -> tuple[bool, int, str]:
     """Downloads a PDF file from the given URLs and saves it to the specified directory.
 
     Args:
@@ -66,9 +64,7 @@ def download_pdf_file(
 
     try:
         for url in urls:
-            response = requests.get(
-                url, timeout=config.download_timeout, headers=config.request_headers
-            )
+            response = requests.get(url, timeout=config.download_timeout, headers=config.request_headers)
 
             if response.status_code == 404:
                 print(f"File not found (404): {row_id} at {url}")
@@ -114,7 +110,7 @@ def write_dict_to_json(status: dict) -> None:
     """Writes a dictionary to a json file
 
     Args:
-        status (dict): The dictionary containing the status of downloads
+        status: The dictionary containing the status of downloads
     """
     with open(config.LOG_FILE, "w") as file:
         json.dump(status, file, indent=2)
@@ -124,7 +120,7 @@ def read_json_to_dict(filepath: Path) -> dict:
     """Small helper function that returns an empty dictionary if the log files doesn't exist.
 
     Args:
-        filepath (Path): The path to the json file.
+        filepath: The path to the json file.
 
     Returns:
         dict: The content of the json file as a dictionary or an empty dictionary if the file doesn't exist.
@@ -136,9 +132,7 @@ def read_json_to_dict(filepath: Path) -> dict:
     return status
 
 
-def filter_data(
-    df: pd.DataFrame, config: config.DataConfig, batch_size: int | None = None
-) -> pd.DataFrame:
+def filter_data(df: pd.DataFrame, config: config.DataConfig, batch_size: int | None = None) -> pd.DataFrame:
     """Filters the dataframe to only include rows with valid URLs and not already processed.
 
     Args:
@@ -165,9 +159,23 @@ def filter_data(
     return unprocessed_df.iloc[:batch_size]
 
 
-def main_concurrent(
-    data_config: config.DataConfig, download_config: config.DownloadConfig
-) -> tuple[float, dict]:
+def extract_urls(df: pd.DataFrame, config: config.DataConfig) -> pd.Series[list[str]]:
+    """Extracts URLs from the specified columns in the dataframe, 
+    removes leading and trailing whitespace and ensure urls are of string type.
+ 
+    Args:
+        df: The dataframe containing the URL columns.
+        config: DataConfig specifying which columns contain URLs.
+    
+    Returns:
+        pd.Series: A series where each entry is a list of URLs for the corresponding row.
+    """
+    df_url_columns = df[[config.pdf_url_column, config.secondary_pdf_url_column]]
+    urls = df_url_columns.apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
+    return urls
+
+
+def main_concurrent(data_config: config.DataConfig, download_config: config.DownloadConfig) -> tuple[float, dict]:
     """Main function to download PDF files concurrently using ThreadPoolExecutor.
 
     Args:
@@ -185,11 +193,7 @@ def main_concurrent(
         index_col=data_config.id_column,
     )
     batch = filter_data(df, data_config, batch_size=download_config.batch_size)
-
-    # Get URLs from both columns and combine them into a list which is stored in a data series for vectorized access with pandas
-    urls = batch[
-        [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
-    ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
+    urls = extract_urls(batch, data_config)
 
     download_status = {}
     with ThreadPoolExecutor(max_workers=download_config.workers) as executor:
@@ -210,10 +214,8 @@ def main_concurrent(
     return end_time - start_time, download_status
 
 
-def main_sequential(
-    data_config: config.DataConfig, download_config: config.DownloadConfig
-) -> tuple[float, dict]:
-    """Main function to download PDF files concurrently using ThreadPoolExecutor.
+def main_sequential(data_config: config.DataConfig, download_config: config.DownloadConfig) -> tuple[float, dict]:
+    """Main function to download PDF files single threaded.
 
     Args:
         data_config: DataConfig containing data file and column info.
@@ -229,11 +231,7 @@ def main_sequential(
         index_col=data_config.id_column,
     )
     batch = filter_data(df, data_config, batch_size=download_config.batch_size)
-
-    # Get URLs from both columns and combine them into a list which is stored in a data series for vectorized access with pandas
-    urls = batch[
-        [data_config.pdf_url_column, data_config.secondary_pdf_url_column]
-    ].apply(lambda row: [str(url).strip() for url in row if pd.notna(url)], axis=1)
+    urls = extract_urls(batch, data_config)
 
     download_status = {}
     for index, url in urls.items():
@@ -248,41 +246,5 @@ def main_sequential(
     return end_time - start_time, download_status
 
 
-def benchmark(func: callable, *args: any) -> tuple[float, any]:
-    """Utility function to benchmark a given function.
-
-    Args:
-        func: The function to benchmark.
-        *args: Positional arguments to pass to the function.
-
-    Returns:
-        tuple: A tuple containing the elapsed time and the result of the function call.
-    """
-    start_time = time.perf_counter()
-    result = func(*args)
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-    return elapsed_time, result
-
-
 if __name__ == "__main__":
-    worker_counts = [2, 4, 8, 16, 24, 28, 32, 50, 75]
-    batch_sizes = [10, 50, 100, 200, 300]
     main_concurrent(data_config, download_config)
-"""
-    run = 0
-    benchmarks = {}
-    for worker_count in worker_counts:
-        for batch_size in batch_sizes:
-            run += 1
-            download_config = config.replace(download_config, batch_size=batch_size, workers=worker_count)
-            elapsed_time, download_status = main_concurrent(data_config, download_config)
-            benchmarks[run] = {
-            "elapsed_time": elapsed_time,
-            "batch_size": download_config.batch_size,
-            "workers": download_config.workers,
-            "download_status": download_status,
-        }
-"""       
-    #with open("benchmarks/benchmarks_vectorization_varying_params.json", "a") as f:
-    #    json.dump(benchmarks, f, indent=2)
