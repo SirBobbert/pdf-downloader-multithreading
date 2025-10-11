@@ -23,7 +23,7 @@ PDF_URL_COLUMN = "Pdf_URL"
 SECONDARY_PDF_URL_COLUMN = "Report Html Address"
 
 # Download settings
-DOWNLOAD_TIMEOUT = 0.5  # seconds
+DOWNLOAD_TIMEOUT = 5  # seconds
 BATCH_SIZE = 20
 WORKERS = 32
 REQUEST_HEADERS = {

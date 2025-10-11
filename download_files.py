@@ -159,7 +159,7 @@ def filter_data(df: pd.DataFrame, config: config.DataConfig, batch_size: int | N
     return unprocessed_df.iloc[:batch_size]
 
 
-def extract_urls(df: pd.DataFrame, config: config.DataConfig) -> pd.Series[list[str]]:
+def extract_urls(df: pd.DataFrame, config: config.DataConfig) -> pd.Series:
     """Extracts URLs from the specified columns in the dataframe, 
     removes leading and trailing whitespace and ensure urls are of string type.
  
@@ -198,8 +198,8 @@ def main_concurrent(data_config: config.DataConfig, download_config: config.Down
     download_status = {}
     with ThreadPoolExecutor(max_workers=download_config.workers) as executor:
         futures = {
-            executor.submit(download_pdf_file, idx, url, download_config): idx
-            for idx, url in urls.items()
+            executor.submit(download_pdf_file, index, url, download_config): index
+            for index, url in urls.items()
         }
 
         for future in as_completed(futures):
