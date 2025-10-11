@@ -1,7 +1,3 @@
----
-config:
-  theme: 'forest'
----
 sequenceDiagram
     participant Main
     participant ThreadPool
@@ -20,21 +16,23 @@ sequenceDiagram
     end
     
     par Concurrent Downloads
-        ThreadPool->>Worker: Assign task 1
+        ThreadPool->>Worker: Assign task
         Worker->>Server: GET request (primary URL)
-        alt Success (200)
+        alt Primary URL Success (200)
             Server-->>Worker: PDF bytes
             Worker->>Worker: Verify PDF magic bytes
             Worker->>FileSystem: Write PDF file
             Worker-->>ThreadPool: Success, 200, URL
-        else Failure (404/403/timeout)
-            Server-->>Worker: Error
+        else Primary URL Failed
+            Server-->>Worker: Error (404/403/timeout)
             Worker->>Server: GET request (secondary URL)
-            alt Success
+            alt Secondary URL Success (200)
                 Server-->>Worker: PDF bytes
+                Worker->>Worker: Verify PDF magic bytes
                 Worker->>FileSystem: Write PDF file
                 Worker-->>ThreadPool: Success, 200, URL
-            else Final Failure
+            else Both URLs Failed
+                Server-->>Worker: Error
                 Worker-->>ThreadPool: Failure, error code, URL
             end
         end
