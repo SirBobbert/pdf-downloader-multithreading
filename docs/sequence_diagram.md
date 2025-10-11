@@ -1,0 +1,41 @@
+sequenceDiagram
+    participant Main
+    participant ThreadPool
+    participant Worker
+    participant Server
+    participant FileSystem
+
+    Main->>Main: Load Excel data
+    Main->>Main: Filter unprocessed rows
+    Main->>Main: Extract URLs
+    
+    Main->>ThreadPool: Create workers (N threads)
+    
+    loop For each URL
+        Main->>ThreadPool: Submit download task
+    end
+    
+    par Concurrent Downloads
+        ThreadPool->>Worker: Assign task 1
+        Worker->>Server: GET request (primary URL)
+        alt Success (200)
+            Server-->>Worker: PDF bytes
+            Worker->>Worker: Verify PDF magic bytes
+            Worker->>FileSystem: Write PDF file
+            Worker-->>ThreadPool: Success, 200, URL
+        else Failure (404/403/timeout)
+            Server-->>Worker: Error
+            Worker->>Server: GET request (secondary URL)
+            alt Success
+                Server-->>Worker: PDF bytes
+                Worker->>FileSystem: Write PDF file
+                Worker-->>ThreadPool: Success, 200, URL
+            else Final Failure
+                Worker-->>ThreadPool: Failure, error code, URL
+            end
+        end
+    end
+    
+    ThreadPool-->>Main: All results
+    Main->>FileSystem: Write log.json
+    Main->>Main: Print completion time

@@ -1,28 +1,30 @@
 # PDF Downloader
 
-A concurrent PDF downloader demonstrating performance optimization and parallel processing techniques in Python. Downloads PDFs from Excel data sources with automatic fallback URLs and resume capability.
+A concurrent PDF downloader demonstrating performance optimization and parallel processing techniques in Python. Downloads PDFs from Excel data sources with automatic fallback URLs.
 
 ## Description
 
-This project explores different concurrency models and optimization strategies for I/O-bound operations. The downloader processes Excel files containing PDF URLs, attempts downloads with automatic fallback to secondary URLs, and tracks status for resumable operations.
+![Benchmarks](benchmarks/performance.png)
+The time it took to process the first 500 urls. The sequential mode was run once due to time constraints, the two subsequent methods were run on the same 500 urls but repeated 10 times.
 
 ### Key Features
-- **Concurrent downloads** using ThreadPoolExecutor
-- **Sequential mode** for comparison and benchmarking
-- **Automatic resume** - skips already downloaded files using status tracking
+- **Concurrent downloads** - using ThreadPoolExecutor
+- **Sequential mode** - for comparison and benchmarking
+- **Batch Processing** - and skips previously attempted downloads based on a log file
 - **URL fallback** - tries secondary URL if primary fails
 - **Status logging** - tracks success/failure with HTTP status codes
-- **Performance benchmarks** - comparing iterrows vs. vectorized operations
+- **Performance benchmarks** - comparing iterrows vs. iterating on data series
 
 ### Project Structure
 ```
 .
 ├── config.py              # Configuration and paths
 ├── download_files.py      # Main download logic
+├── docs/                  # Project description, powerpoint
 ├── data/                  # Input Excel files
 │   └── GRI_2017_2020.xlsx
 ├── downloads/             # Downloaded PDFs (created automatically)
-├── logs/                  # Download status tracking
+├── logs/                  # Download status tracking (created automatically)
 │   └── log.json
 └── benchmarks/            # Performance test results
     ├── benchmarks_sequential.json
@@ -51,6 +53,7 @@ uv sync
 Alternatively, using pip:
 ```bash
 pip install -r requirements.txt
+source .venv/bin/activate # ./venv/Scripts/activate
 ```
 
 ## Usage
@@ -61,11 +64,11 @@ uv run download_files.py
 ```
 
 The script will:
-1. Load Excel data from `data/GRI_2017_2020.xlsx`
-2. Filter for rows with valid PDF URLs
-3. Skip files already downloaded (tracked in `logs/log.json`)
-4. Download PDFs concurrently to `downloads/`
-5. Log success/failure status with HTTP codes
+1. Load Excel data and extract URLs from primary and secondary columns
+2. Filter for valid URLs and skip previously attempted downloads (tracked in `logs/log.json`)
+3. Concurrently send GET requests to primary URLs, fallback to secondary if failed
+4. Verify PDF content using magic bytes (check if first bytes are `%PDF-`)
+5. Save valid PDFs to `downloads/` and log all outcomes with HTTP status codes
 
 ### Configuration
 
@@ -86,34 +89,7 @@ Downloads are tracked in `logs/log.json` with the format:
   "ID124": [false, 404, "https://example.com/missing.pdf"]
 }
 ```
-
-The script automatically resumes from where it left off if interrupted.
-
-## Performance Optimization
-
-The project demonstrates several optimization techniques:
-
-### Concurrency Models
-- **Sequential** - Single-threaded baseline
-- **ThreadPoolExecutor** - Concurrent downloads with configurable worker pool
-- **Benchmarks** stored in `benchmarks/` directory for comparison
-
-### Benchmark Results
-Performance testing compares different approaches across varying batch sizes and worker counts. Results demonstrate the impact of:
-- Thread pool size on throughput
-- Pandas operation optimization
-- I/O-bound vs. CPU-bound bottlenecks
-
-## Implementation Details
-
-### Download Strategy
-1. Extract URLs from primary and secondary columns
-2. Attempt download from primary URL
-3. If failed, attempt secondary URL
-4. Verify PDF content using magic bytes (check if first bytes are `"%PDF-"`)
-5. Write file and update status log
-
-### Error Codes
+### Status Codes
 - **408** - Timeout
 - **404** - File not found
 - **403** - Access forbidden
@@ -121,10 +97,7 @@ Performance testing compares different approaches across varying batch sizes and
 - **500** - Generic request error
 - **503** - Connection error
 
+
 ## Author
 
 Julius Foverskov
-
-## License
-
-This project is for educational purposes.
