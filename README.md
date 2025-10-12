@@ -1,11 +1,11 @@
 # PDF Downloader
 
-A concurrent PDF downloader demonstrating performance optimization and parallel processing techniques in Python. Downloads PDFs from Excel data sources with automatic fallback URLs.
+A concurrent PDF downloader demonstrating performance optimization and parallel processing techniques in Python. Downloads PDFs from Excel data sources with fallback URLs.
 
 ## Description
 
 ![Benchmarks](benchmarks/performance.png)
-The time it took to process the first 500 urls. The sequential mode was run once due to time constraints, the two subsequent methods were run on the same 500 urls but repeated 10 times.
+Processing time for the first 500 URLs across three approaches. Sequential mode was run once due to time constraints. The two subsequent methods both used multithreaded execution via concurrent.futures.ThreadPoolExecutor and were repeated 10 times on the same 500 URLs. The key difference lies in their iteration methods: iterrows() includes all DataFrame columns during iteration, while items() iterates over a single column only.
 
 ### Key Features
 - **Concurrent downloads** - using ThreadPoolExecutor
@@ -50,8 +50,9 @@ cd pdf-downloader-multithreading
 uv sync
 ```
 
-Alternatively, using pip:
+Alternatively, using pip and venv:
 ```bash
+python3 -m venv .venv
 pip install -r requirements.txt
 source .venv/bin/activate # ./venv/Scripts/activate
 ```
