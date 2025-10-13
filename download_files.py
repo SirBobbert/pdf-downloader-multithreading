@@ -26,7 +26,7 @@ download_config = config.DownloadConfig(
 )
 
 
-def verify_pdf(content: bytes) -> bool:
+def verify_pdf(content: bytes | None) -> bool:
     """Verifies if the content is a valid PDF by checking first bytes.
 
     Args:
@@ -35,12 +35,17 @@ def verify_pdf(content: bytes) -> bool:
     Returns:
         bool: True if content is a valid PDF, False otherwise.
     """
+    
+    if not content:
+        return False
+    
     PDF_MAGIC_BYTES = b"%PDF-"
     return content.startswith(PDF_MAGIC_BYTES)
 
 
 def download_pdf_file(row_id: Hashable | str, urls: list[str], config: config.DownloadConfig) -> tuple[bool, int, str]:
-    """Downloads a PDF file from the given URLs and saves it to the specified directory.
+    
+        """Downloads a PDF file from the given URLs and saves it to the specified directory.
 
     Args:
         row_id: The identifier for the row, used to name the saved file.
@@ -57,53 +62,59 @@ def download_pdf_file(row_id: Hashable | str, urls: list[str], config: config.Do
         requests.RequestException: For other request-related errors.
 
     """
-    save_path = config.downloads_dir / f"{row_id}.pdf"
+    
+        save_path = config.downloads_dir / f"{row_id}.pdf"
+        result_code = 0
+        url = ""
 
-    result_code = 0
-    url = ""
+        try:
+            for url in urls:
+                response = requests.get(url, timeout=config.download_timeout, headers=config.request_headers)
 
-    try:
-        for url in urls:
-            response = requests.get(url, timeout=config.download_timeout, headers=config.request_headers)
+                if response.status_code == 404:
+                    print(f"File not found (404): {row_id} at {url}")
+                    result_code = response.status_code
+                    continue
 
-            if response.status_code == 404:
-                print(f"File not found (404): {row_id} at {url}")
+                if response.status_code == 403:
+                    print(f"Access forbidden (403): {row_id} at {url}")
+                    result_code = response.status_code
+                    continue
+
+                if not response.ok:
+                    print(f"HTTP error {response.status_code} for {row_id} at {url}")
+                    result_code = response.status_code
+                    continue
+
+                if not verify_pdf(response.content):
+                    result_code = 415
+                    print(f"Invalid PDF (415): {row_id} at {url}")
+                    continue
+
+                try:
+                    save_path.write_bytes(response.content)
+                except OSError as e:
+                    print(f"I/O error (500): {row_id} at {url}: {e}")
+                    return False, 500, url
+
+                print(f"Successfully downloaded and wrote file: {row_id}")
                 result_code = response.status_code
-                continue
+                return True, result_code, url
 
-            if response.status_code == 403:
-                print(f"Access forbidden (403): {row_id} at {url}")
-                result_code = response.status_code
-                continue
+        except requests.Timeout:
+            result_code = 408
+            print(f"Timeout error (408): {row_id} at {url}")
 
-            if not response.ok:
-                print(f"HTTP error {response.status_code} for {row_id} at {url}")
-                result_code = response.status_code
-                continue
+        except requests.ConnectionError:
+            result_code = 503
+            print(f"Connection error (503): {row_id} at {url}")
 
-            if not verify_pdf(response.content):
-                result_code = 415
-                print(f"Invalid PDF (415): {row_id} at {url}")
-                continue
+        except requests.RequestException as e:
+            result_code = 500
+            print(f"Error with file (500): {row_id}: {e}")
 
-            save_path.write_bytes(response.content)
-            print(f"Successfully downloaded and wrote file: {row_id}")
-            result_code = response.status_code
-            return True, result_code, url
+        return False, result_code, url
 
-    except requests.Timeout:
-        result_code = 408
-        print(f"Timeout error (408): {row_id} at {url}")
-
-    except requests.ConnectionError:
-        result_code = 503
-        print(f"Connection error (503): {row_id} at {url}")
-
-    except requests.RequestException as e:
-        result_code = 500
-        print(f"Error with file (500): {row_id}: {e}")
-
-    return False, result_code, url
 
 
 def write_dict_to_json(status: dict) -> None:
