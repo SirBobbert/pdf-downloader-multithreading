@@ -64,7 +64,7 @@ def http_server(tmp_path):
     finally:
         # Teardown: stop server after tests
         httpd.shutdown()
-
+        httpd.server_close()
 
 
 # ---------- Configurations and paths ----------
