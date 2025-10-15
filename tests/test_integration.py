@@ -143,7 +143,7 @@ def test_excel_reading_and_index(cfgs, http_server):
     assert list(df.index) == ["BR1", "BR2"]
 
 
-# URL processing: trim whitespace and use secondary fallback
+# Trim whitespace and use secondary fallback
 def test_urls_trim_and_secondary_used(cfgs, http_server):
     data_cfg, dl_cfg = cfgs
     rows = [
@@ -244,3 +244,61 @@ def test_rerun_skips_logged(cfgs, http_server):
     # Run again and assert BR11 is processed successfully
     _, status = mod.main_sequential(data_cfg, dl_cfg)
     assert "BR11" in status and status["BR11"][0] is True
+    
+    
+# Primary URL 404 then secondary URL 200
+def test_primary_404_then_secondary_200(cfgs, http_server):
+    data_cfg, dl_cfg = cfgs
+    
+    # First URL missing, second URL valid
+    rows = [{"ID": "FALLBACK",
+             "PDF_URL": f"{http_server}/missing.pdf",
+             "PDF_URL_2": f"{http_server}/valid.pdf"}]
+    write_excel(Path(data_cfg.data_file), rows)
+
+    # Run sequentially for deterministic order
+    _, status = mod.main_sequential(data_cfg, dl_cfg)
+
+    # Expect fallback succeeded: ok=True, code=200, last used is /valid.pdf
+    ok, code, used = status["FALLBACK"]
+    assert ok is True and code == 200 and used.endswith("/valid.pdf")
+
+
+# Both URLs fail: primary 404 then secondary 404
+def test_both_urls_fail(cfgs, http_server):
+    data_cfg, dl_cfg = cfgs
+    
+    # Both URLs are missing to force failure
+    rows = [{"ID": "FAIL2",
+             "PDF_URL": f"{http_server}/missing.pdf",
+             "PDF_URL_2": f"{http_server}/missing2.pdf"}]
+    write_excel(Path(data_cfg.data_file), rows)
+
+    # Run and collect per-ID status tuple: (ok, code, used_url)
+    _, status = mod.main_sequential(data_cfg, dl_cfg)
+    ok, code, used = status["FAIL2"]
+
+    # Must fail; code maps to module’s failure codes; last attempted is secondary
+    assert ok is False
+    assert code in (404, 500, 503)          # module-specific mapping of failures
+    assert used.endswith("/missing2.pdf")   # last attempted URL recorded
+
+
+# Simulate a timeout via monkeypatching requests.get to raise Timeout
+def test_timeout_via_monkeypatch(cfgs, http_server, monkeypatch):
+    data_cfg, dl_cfg = cfgs
+    
+    # Single valid path but network call will be patched to timeout
+    rows = [{"ID": "TO", "PDF_URL": f"{http_server}/valid.pdf", "PDF_URL_2": None}]
+    write_excel(Path(data_cfg.data_file), rows)
+
+    # Force requests.get to raise Timeout for any call
+    def _timeout(*a, **k):
+        import requests
+        raise requests.Timeout("simulated")
+    monkeypatch.setattr(mod.requests, "get", _timeout)
+
+    # Run. Expect failure and timeout-mapped code
+    _, status = mod.main_sequential(data_cfg, dl_cfg)
+    assert status["TO"][0] is False
+    assert status["TO"][1] in (408, 500)    # depends on how module maps timeouts
