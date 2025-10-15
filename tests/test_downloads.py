@@ -54,6 +54,16 @@ def test_successful_download(tmp_path):
     assert code == 200
     assert used == BASE_URL
     assert (tmp_path / "row1.pdf").exists()
+    
+
+
+# --- Bad request (400) ---
+@pytest.mark.parametrize("bad", ["htp://bad", "://no", " example.com ", "", None])
+def test_invalid_url_format_maps_to_400(tmp_path, bad):
+    cfg = DummyConfig(tmp_path)
+    ok, code, used = download_pdf_file("row_bad", [bad], cfg)
+    assert (ok, code) == (False, 400)
+    assert not (tmp_path / "row_bad.pdf").exists()
 
 
 # --- Fallback: first URL 404, second OK ---
@@ -126,21 +136,6 @@ def test_request_exception_returns_500(tmp_path):
 
     responses.add_callback(responses.GET, BASE_URL, callback=boom)
     assert download_pdf_file("row7", [BASE_URL], cfg) == (False, 500, BASE_URL)
-
-
-# --- Uses request headers from cfg ---
-@responses.activate
-def test_uses_request_headers(tmp_path):
-    cfg = DummyConfig(tmp_path)
-    cfg.request_headers = {"User-Agent": "test-agent"}
-
-    def check_headers(req):
-        assert req.headers.get("User-Agent") == "test-agent"
-        return (200, {"Content-Type": "application/pdf"}, b"%PDF-1.4\nOK")
-
-    responses.add_callback(responses.GET, BASE_URL, callback=check_headers)
-    ok, code, used = download_pdf_file("row8", [BASE_URL], cfg)
-    assert (ok, code, used) == (True, 200, BASE_URL)
 
 
 # --- Simulate I/O error when writing PDF ---

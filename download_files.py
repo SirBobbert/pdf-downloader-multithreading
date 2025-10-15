@@ -6,6 +6,7 @@ import config
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from _collections_abc import Hashable
+from requests.exceptions import MissingSchema, InvalidSchema, InvalidURL, URLRequired
 
 
 data_config = config.DataConfig(
@@ -100,6 +101,10 @@ def download_pdf_file(row_id: Hashable | str, urls: list[str], config: config.Do
                 print(f"Successfully downloaded and wrote file: {row_id}")
                 result_code = response.status_code
                 return True, result_code, url
+            
+        except (MissingSchema, InvalidSchema, InvalidURL, URLRequired, ValueError, TypeError):
+            print(f"Invalid URL (400): {row_id} at {url!r}")
+            return False, 400, url
 
         except requests.Timeout:
             result_code = 408
